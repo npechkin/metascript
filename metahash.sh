@@ -83,6 +83,7 @@ openssl ec -in $ecpriv -out mhdec.pem 2>/dev/null
 
 gen-public-key () {
 get-config
+# add comment
 echo pubkey=$privkey
 openssl ec -in $privkey -pubout -out mh.pub 2>/dev/null
 }
