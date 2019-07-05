@@ -1,1 +1,1 @@
-# metascript
+# metahash tools script
