@@ -1,5 +1,7 @@
 #!/bin/bash
 # METAHASH TOOL
+# app://ForgingMHC#!/delegation/server/0x00f0bec7a7b832d4400455229103c6cec3abd6736f60152b6d
+# For MHC delegation. Geo CN. Reward 90%.
 
 scriptname=$0
 vars=("$@")
@@ -83,7 +85,6 @@ openssl ec -in $ecpriv -out mhdec.pem 2>/dev/null
 
 gen-public-key () {
 get-config
-# add comment
 echo pubkey=$privkey
 openssl ec -in $privkey -pubout -out mh.pub 2>/dev/null
 }
