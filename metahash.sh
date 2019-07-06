@@ -361,7 +361,7 @@ do
     ;;
     get-address)
 	get-config
-	get-address-from-pub-key
+	get-address-from-pubkey
 	echo "Your Metahash address is $metahash_address"
 	exit 0
     ;;
