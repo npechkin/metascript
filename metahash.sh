@@ -1,7 +1,7 @@
 #!/bin/bash
 # METAHASH TOOL
 # app://ForgingMHC#!/delegation/server/0x00f0bec7a7b832d4400455229103c6cec3abd6736f60152b6d
-# For MHC delegation. Geo CN. Reward 90%.
+# For MHC delegation. Geo CN. Reward 90%. Add for donats.
 
 scriptname=$0
 vars=("$@")
