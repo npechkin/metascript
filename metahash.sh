@@ -176,7 +176,7 @@ else
 fi
 }
 
-gen_transaction() {
+gen-transaction() {
     function hex_to_endian () {
     endian=''
     i=0
@@ -218,15 +218,14 @@ do
     bin_exp=$bin_exp" $bin->$res "
     bin_data=$bin_data"$res"
 done
-bin_to=`echo $send_to|sed 's/0x//'`
 
-if [ -z $data ]
-then 
+bin_to=`echo $send_to|sed 's/0x//'`
+if [ -z "$data" ]
+then
     string_to_sign_hex=$bin_to$bin_data
 else
     string_to_sign_hex=$bin_to$bin_data$dataHex
 fi
-#echo dataHex=$dataHex data=$data string_to_sign_hex=$string_to_sign_hex
 }
 
 prepare-transaction () {
@@ -235,7 +234,6 @@ if [ -z $nonce ]
 then
     address=$metahash_address
     balance=$(fetch-balance)
-#    echo $balance
     count_send=`echo $balance|grep -o '"count_spent":.[0-9]*'|cut -d':' -f2`
     nonce=$((count_send+1))
 fi
@@ -244,7 +242,7 @@ then
     echo "private key is mandatory option! please specify --privkey=/path/to/private_key "
     exit 2
 fi
-gen_transaction
+gen-transaction
 to_sign_temp='/tmp/to_sign'
 signed_temp='/tmp/signed'
 echo $string_to_sign_hex|xxd -r -ps >$to_sign_temp
