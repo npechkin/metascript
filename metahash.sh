@@ -1,7 +1,7 @@
 #!/bin/bash
 # METAHASH TOOL
 # app://ForgingMHC#!/delegation/server/0x00f0bec7a7b832d4400455229103c6cec3abd6736f60152b6d
-# For MHC delegation. Geo CN. Reward 90%. Add for donats.
+# For MHC delegation. Geo CN. Reward 90%. And for donats.
 
 scriptname=$0
 vars=("$@")
@@ -23,6 +23,9 @@ gen-public-key -- generate public key from private key.
 get-address -- get your own metahash address.
 \t --net=NETWORK(dev|main|test)
 \t --pubkey=/path/to/public_key
+show-private-key -- show key for proxy.
+\t --net=NETWORK(dev|main|test)
+\t --privkey=/path/to/private_key
 fetch-balance -- get balance information.
 \t --net=NETWORK(dev|main|test)
 \t --address=metahash_address
@@ -104,6 +107,14 @@ fi
     metahash_address="0x$rmdhash$hash4"
     #echo $metahash_address
     rm -f $mh_addr
+}
+
+show-private-key () {
+get-config
+#privkey=key/proxy.pem
+echo privkey=$privkey
+proxy_key=`openssl ec -in $privkey -outform DER | xxd -p | tr -d '\n'`
+echo $proxy_key
 }
 
 fetch-balance () {
@@ -240,7 +251,7 @@ then
 fi
 signed=`cat $signed_temp|xxd -p|tr -d '\n'`
 json='{"id":1,"method":"mhc_send","params":{"to":"'$send_to'","value":"'$amount'","fee":"'$fee'","nonce":"'$nonce'","data":"'$dataHex'","pubkey":"'$pubkey_der_16'","sign":"'$signed'"}}'
-echo $json
+#echo $json
 }
 
 send-transaction () {
@@ -363,6 +374,10 @@ do
 	get-config
 	get-address-from-pubkey
 	echo "Your Metahash address is $metahash_address"
+	exit 0
+    ;;
+    show-private-key)
+	show-private-key
 	exit 0
     ;;
     fetch-history)
