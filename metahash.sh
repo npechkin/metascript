@@ -10,7 +10,7 @@ usage () {
 echo -e "Usage: $scriptname option [parameter]
 List of options:
 usage -- display help info.
-generate -- generate MetaHash address with OpenSSL CLI Tool.
+generate -- generate MetaHash address with OpenSSL Tool.
 enc-private-key -- encrypt your private key with password (for MetaGate).
 \t --net=NETWORK(dev|main|test)
 \t --privkey=/path/to/private_key
@@ -24,6 +24,9 @@ get-address -- get your own metahash address.
 \t --net=NETWORK(dev|main|test)
 \t --pubkey=/path/to/public_key
 show-private-key -- show key for proxy.
+\t --net=NETWORK(dev|main|test)
+\t --privkey=/path/to/private_key
+show-public-key -- show public key DER16.
 \t --net=NETWORK(dev|main|test)
 \t --privkey=/path/to/private_key
 fetch-balance -- get balance information.
@@ -111,10 +114,14 @@ fi
 
 show-private-key () {
 get-config
-#privkey=key/proxy.pem
-echo privkey=$privkey
-proxy_key=`openssl ec -in $privkey -outform DER | xxd -p | tr -d '\n'`
+proxy_key=`openssl ec -in $privkey -outform DER 2>/dev/null | xxd -p | tr -d '\n'`
 echo $proxy_key
+}
+
+show-public-key () {
+get-config
+pubkey_der_16=`openssl ec -in $privkey -pubout -outform DER 2>/dev/null|xxd -p|tr -d '\n'`
+echo $pubkey_der_16
 }
 
 fetch-balance () {
@@ -380,6 +387,10 @@ do
 	show-private-key
 	exit 0
     ;;
+    show-public-key)
+	show-public-key
+	exit 0
+    ;;
     fetch-history)
 	fetch-history
 	exit 0
@@ -409,12 +420,10 @@ do
 	exit 0
     ;;
     -*)
-	echo "Error: Unknown option: $1" >&2
 	usage
 	exit 1
     ;;
     *)  # No more options
-	echo "Error: Unknown option: $1" >&2
     usage
 	exit 1
     ;;
