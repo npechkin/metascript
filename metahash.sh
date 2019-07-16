@@ -61,7 +61,7 @@ send-transaction -- send a transaction to server.
 }
 
 generate () {
-openssl ecparam -genkey -name secp256k1 -out mhdec.pem 2>/dev/null
+openssl ecparam -genkey -name secp256k1 -out mh.pem 2>/dev/null
 if [ $? -eq 0 ]; then
     echo -n 'Done! '
 else
@@ -69,8 +69,8 @@ else
     echo 'Something went wrong, check your openssl installation'
     exit 127
 fi
-openssl ec -in mhdec.pem -pubout -out mh.pub 2>/dev/null
-openssl ec -in mhdec.pem -out mhenc.pem -aes256 2>/dev/null
+openssl ec -in mh.pem -pubout -out mh.pub 2>/dev/null
+openssl ec -in mh.pem -out mh.ec.priv -aes256 2>/dev/null
 echo -e 'Private key saved as mhdec.pem, mhenc.pem, public as mh.pub in key directory.
 YOUR MUST SAVE YOURS KEYS!!!'
 get-address-from-pubkey "from_gen"
@@ -80,13 +80,13 @@ echo -e "Your metahash address is $metahash_address"
 enc-private-key () {
 get-config
 echo privkey=$privkey
-openssl ec -in $privkey -out mhenc.pem -aes256 2>/dev/null
+openssl ec -in $privkey -out mh.ec.priv -aes256 2>/dev/null
 }
 
 dec-private-key () {
 get-config
 echo ecpriv=$ecpriv
-openssl ec -in $ecpriv -out mhdec.pem 2>/dev/null
+openssl ec -in $ecpriv -out mh.pem 2>/dev/null
 }
 
 gen-public-key () {
