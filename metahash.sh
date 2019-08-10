@@ -1,7 +1,7 @@
 #!/bin/bash
 # METAHASH TOOL
 # app://ForgingMHC#!/delegation/server/0x00f0bec7a7b832d4400455229103c6cec3abd6736f60152b6d
-# For MHC delegation. (Geo CN. Reward 90%|95% for > 1kk MHC.) And for donats.
+# For MHC delegation. (Geo CN. Reward 90%|95% for > 100k MHC.) And for donats.
 
 scriptname=$0
 vars=("$@")
@@ -101,6 +101,7 @@ then
     pubkey_file=mh.pub
 fi
     mh_addr=`mktemp /tmp/mh.XXXXX`
+#    echo mh_addr=$mh_addr
     openssl ec -pubin -inform PEM -in $pubkey_file -outform DER 2>/dev/null |tail -c 65|xxd -p -c 65 >$mh_addr
     sha256hashpub=`cat $mh_addr | xxd -r -p | openssl dgst -sha256 2>/dev/null| cut -f 2 -d ' '`
     rmdhash=00`echo -e $sha256hashpub  | xxd -r -p | openssl dgst -rmd160 | cut -f 2 -d ' '`
@@ -114,13 +115,13 @@ fi
 
 show-private-key () {
 get-config
-proxy_key=`openssl ec -in $privkey -outform DER 2>/dev/null | xxd -p | tr -d '\n'`
+proxy_key=`openssl ec -in $privkey -outform DER 2>/dev/null | xxd -p | tr -d '\r\n'`
 echo $proxy_key
 }
 
 show-public-key () {
 get-config
-pubkey_der_16=`openssl ec -in $privkey -pubout -outform DER 2>/dev/null|xxd -p|tr -d '\n'`
+pubkey_der_16=`openssl ec -in $privkey -pubout -outform DER 2>/dev/null|xxd -p|tr -d '\r\n'`
 echo $pubkey_der_16
 }
 
@@ -246,15 +247,16 @@ gen-transaction
 to_sign_temp='/tmp/to_sign'
 signed_temp='/tmp/signed'
 echo $string_to_sign_hex|xxd -r -ps >$to_sign_temp
-cat $to_sign_temp|openssl dgst -sha256 -sign $privkey >$signed_temp 2>/dev/null
-pubkey_der_16=`openssl ec -in $privkey -pubout -outform DER 2>/dev/null|xxd -p|tr -d '\n'`
+cat $to_sign_temp | openssl dgst -sha256 -sign $privkey > $signed_temp 2>/dev/null
+pubkey_der_16=`openssl ec -in $privkey -pubout -outform DER 2>/dev/null|xxd -p|tr -d '\r\n'`
+#echo to_sign_temp=`cat $to_sign_temp` signed_temp=`cat $signed_temp`
 openssl dgst -sha256 -verify $pubkey_file -signature $signed_temp $to_sign_temp >/dev/null 2>&1
 if [ $? -ne 0 ]
 then
     echo Failed to verify signed data, exiting
     exit 2
 fi
-signed=`cat $signed_temp|xxd -p|tr -d '\n'`
+signed=`cat $signed_temp|xxd -p|tr -d '\r\n'`
 json='{"id":1,"method":"mhc_send","params":{"to":"'$send_to'","value":"'$amount'","fee":"'$fee'","nonce":"'$nonce'","data":"'$dataHex'","pubkey":"'$pubkey_der_16'","sign":"'$signed'"}}'
 #echo $json
 }
@@ -323,7 +325,7 @@ do
 	;;
 	--nonce)
 	nonce=$value
-	echo nonce=$nonce
+#	echo nonce=$nonce
 	;;
 	--dataHex)
 	dataHex=$value
