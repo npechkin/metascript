@@ -1,7 +1,7 @@
 #!/bin/bash
 # METAHASH TOOL
 # app://ForgingMHC#!/delegation/server/0x00f0bec7a7b832d4400455229103c6cec3abd6736f60152b6d
-# For MHC delegation. (Geo CN. Reward 90%|95% for > 100k MHC.) And for donats.
+# For MHC delegation. (Geo CN. Reward 90%|95% for > 90k MHC.) And for donats.
 
 scriptname=$0
 vars=("$@")
@@ -12,22 +12,16 @@ List of options:
 usage -- display help info.
 generate -- generate MetaHash address with OpenSSL Tool.
 enc-private-key -- encrypt your private key with password (for MetaGate).
-\t --net=NETWORK(dev|main|test)
 \t --privkey=/path/to/private_key
 dec-private-key -- decrypt encrypted private key.
-\t --net=NETWORK(dev|main|test)
 \t --ecpriv=/path/to/ecpriv_key
 gen-public-key -- generate public key from private key.
-\t --net=NETWORK(dev|main|test)
 \t --privkey=/path/to/private_key
 get-address -- get your own metahash address.
-\t --net=NETWORK(dev|main|test)
 \t --pubkey=/path/to/public_key
 show-private-key -- show key for proxy.
-\t --net=NETWORK(dev|main|test)
 \t --privkey=/path/to/private_key
 show-public-key -- show public key DER16.
-\t --net=NETWORK(dev|main|test)
 \t --privkey=/path/to/private_key
 fetch-balance -- get balance information.
 \t --net=NETWORK(dev|main|test)
@@ -60,62 +54,78 @@ send-transaction -- send a transaction to server.
     exit 1
 }
 
+check-network () {
+get-config
+if [ -z $net ]
+then
+    echo "network is mandatory parameter, please specify"
+    exit 2
+else
+    proxy_node="proxy.net-$net.metahashnetwork.com:9999"
+    torrent_node="tor.net-$net.metahashnetwork.com:5795"
+fi
+}
+
 generate () {
 openssl ecparam -genkey -name secp256k1 -out mh.pem 2>/dev/null
 if [ $? -eq 0 ]; then
-    echo -n 'Done! '
+    openssl ec -in mh.pem -pubout -out mh.pub 2>/dev/null
+    pubkey_file=mh.pub
+    get-address-from-pubkey
+    mv mh.pem $metahash_address.pem
+    mv mh.pub $metahash_address.pub
+    echo "Your metahash address is $metahash_address"
+    echo "Private key saved as $metahash_address.pem"
+    echo "Public key saved as $metahash_address.pub"
+    echo "YOUR MUST SAVE YOURS KEY! NO KEY - NO MONEY!!!"
 else
     echo
     echo 'Something went wrong, check your openssl installation'
-    exit 127
+    exit 3
 fi
-openssl ec -in mh.pem -pubout -out mh.pub 2>/dev/null
-openssl ec -in mh.pem -out mh.ec.priv -aes256 2>/dev/null
-echo -e 'Private key saved as mhdec.pem, mhenc.pem, public as mh.pub in key directory.
-YOUR MUST SAVE YOURS KEYS!!!'
-get-address-from-pubkey "from_gen"
-echo -e "Your metahash address is $metahash_address"
 }
 
 enc-private-key () {
 get-config
 echo privkey=$privkey
 openssl ec -in $privkey -out mh.ec.priv -aes256 2>/dev/null
+gen-public-key
+mv mh.ec.priv $metahash_address.ec.priv
 }
 
 dec-private-key () {
 get-config
 echo ecpriv=$ecpriv
 openssl ec -in $ecpriv -out mh.pem 2>/dev/null
+privkey=mh.pem
+gen-public-key
+mv mh.pem $metahash_address.pem
 }
 
 gen-public-key () {
 get-config
 echo privkey=$privkey
 openssl ec -in $privkey -pubout -out mh.pub 2>/dev/null
+pubkey_file=mh.pub
+get-address-from-pubkey
+mv mh.pub $metahash_address.pub
 }
 
 get-address-from-pubkey () {
-if [[ $1 == 'from_gen' ]] || [ -f mh.pub ] && [ -z $pubkey_file ]
-then
-    pubkey_file=mh.pub
-fi
-    mh_addr=`mktemp /tmp/mh.XXXXX`
-#    echo mh_addr=$mh_addr
-    openssl ec -pubin -inform PEM -in $pubkey_file -outform DER 2>/dev/null |tail -c 65|xxd -p -c 65 >$mh_addr
-    sha256hashpub=`cat $mh_addr | xxd -r -p | openssl dgst -sha256 2>/dev/null| cut -f 2 -d ' '`
-    rmdhash=00`echo -e $sha256hashpub  | xxd -r -p | openssl dgst -rmd160 | cut -f 2 -d ' '`
-    sha256rmdhash=`echo -e $rmdhash | xxd -r -p | openssl dgst -sha256 | cut -f 2 -d ' '`
-    sha256hash4=`echo -e  $sha256rmdhash | xxd -r -p | openssl dgst -sha256 | cut -f 2 -d ' '`
-    hash4=`echo -e $sha256hash4|head -c 8`
-    metahash_address="0x$rmdhash$hash4"
-    #echo $metahash_address
-    rm -f $mh_addr
+mh_addr=`mktemp /tmp/mh.XXXXX`
+openssl ec -pubin -inform PEM -in $pubkey_file -outform DER 2>/dev/null |tail -c 65|xxd -p -c 65 >$mh_addr
+sha256hashpub=`cat $mh_addr | xxd -r -p | openssl dgst -sha256 2>/dev/null| cut -f 2 -d ' '`
+rmdhash=00`echo -e $sha256hashpub  | xxd -r -p | openssl dgst -rmd160 | cut -f 2 -d ' '`
+sha256rmdhash=`echo -e $rmdhash | xxd -r -p | openssl dgst -sha256 | cut -f 2 -d ' '`
+sha256hash4=`echo -e  $sha256rmdhash | xxd -r -p | openssl dgst -sha256 | cut -f 2 -d ' '`
+hash4=`echo -e $sha256hash4|head -c 8`
+metahash_address="0x$rmdhash$hash4"
+rm -f $mh_addr
 }
 
 show-private-key () {
 get-config
-proxy_key=`openssl ec -in $privkey -outform DER 2>/dev/null | xxd -p | tr -d '\r\n'`
+proxy_key=`openssl ec -in $privkey -outform DER 2>/dev/null|xxd -p|tr -d '\r\n'`
 echo $proxy_key
 }
 
@@ -126,7 +136,7 @@ echo $pubkey_der_16
 }
 
 fetch-balance () {
-get-config
+check-network
 if [ -z $address ]
 then
     echo "Address is mandatory parameter, please specify"
@@ -142,9 +152,8 @@ else
 fi
 }
 
-
 fetch-history () {
-get-config
+check-network
 if [ -z $address ]
 then
     echo "Address is mandatory parameter, please specify"
@@ -161,7 +170,7 @@ fi
 }
 
 get-tx () {
-get-config
+check-network
 if [ -z $tx_hash ]
 then
     echo "tx-hash (transaction hash) is mandatory parameter, please specify"
@@ -230,7 +239,7 @@ fi
 }
 
 prepare-transaction () {
-get-config
+check-network
 if [ -z $nonce ]
 then
     address=$metahash_address
@@ -325,12 +334,10 @@ do
 	;;
 	--nonce)
 	nonce=$value
-#	echo nonce=$nonce
 	;;
 	--dataHex)
 	dataHex=$value
 	data=`echo $dataHex|xxd -r -p`
-	#sizeOfData=`echo ${#data}`;
 	sizeOfData=`echo $data|awk '{print length}'`
 	;;
 	--fee)
@@ -338,17 +345,7 @@ do
 	;;
     esac
 done
-
-if [ -z $net ]
-then
-    echo "network is mandatory parameter, please specify"
-    exit 2
-else
-    proxy_node="proxy.net-$net.metahashnetwork.com:9999"
-    torrent_node="tor.net-$net.metahashnetwork.com:5795"
-fi
 }
-
 
 while :
 do
@@ -380,7 +377,7 @@ do
     get-address)
 	get-config
 	get-address-from-pubkey
-	echo "Your Metahash address is $metahash_address"
+	echo "$metahash_address"
 	exit 0
     ;;
     show-private-key)
