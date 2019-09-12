@@ -11,6 +11,8 @@ echo -e "Usage: $scriptname option [parameter]
 List of options:
 usage -- display help info.
 generate -- generate MetaHash address with OpenSSL Tool.
+get-private-key -- convert DER16 type to PEM.
+\t --der16priv=/path/to/der16_key
 enc-private-key -- encrypt your private key with password (for MetaGate).
 \t --privkey=/path/to/private_key
 dec-private-key -- decrypt encrypted private key.
@@ -19,7 +21,7 @@ gen-public-key -- generate public key from private key.
 \t --privkey=/path/to/private_key
 get-address -- get your own metahash address.
 \t --pubkey=/path/to/public_key
-show-private-key -- show key for proxy.
+show-private-key -- show private key DER16.
 \t --privkey=/path/to/private_key
 show-public-key -- show public key DER16.
 \t --privkey=/path/to/private_key
@@ -83,6 +85,17 @@ else
     echo 'Something went wrong, check your openssl installation'
     exit 3
 fi
+}
+
+get-private-key () {
+get-config
+cat $der16priv | xxd -r -p - | openssl ec -inform der -out mh.pem 2>/dev/null
+openssl ec -in mh.pem -pubout -out mh.pub 2>/dev/null
+pubkey_file=mh.pub
+get-address-from-pubkey
+mv mh.pem $metahash_address.pem
+mv mh.pub $metahash_address.pub
+echo "$metahash_address.pem is generated"
 }
 
 enc-private-key () {
@@ -326,6 +339,15 @@ do
 	    exit 2
 	fi
 	;;
+	--der16priv)
+	if [ -f $value ]
+	then
+	    der16priv=$value
+	else
+	    echo no DER16 private key file $value found
+	    exit 2
+	fi
+	;;
 	--amount)
 	amount=$value
 	;;
@@ -360,6 +382,10 @@ do
     ;;
     generate)
 	generate
+	exit 0
+    ;;
+    get-private-key)
+	get-private-key
 	exit 0
     ;;
     enc-private-key)
